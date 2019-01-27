@@ -176,7 +176,7 @@ public class TimeFetcher {
         System.out.println(separator);
         System.out.println("Welcome to TimeFetcher!\nIn this program, you can enter a city \n" +
                 "or a country and I will give you the \n" +
-                "current time and dayAndDate");
+                "current time and date");
         System.out.println(separator);
     }
 }
