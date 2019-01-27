@@ -10,7 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This is a program that fetches the time and date of a city or a country and shows it to the user.
+ * This is a program that fetches the time and dayAndDate of a city or a country and shows it to the user.
+ * Create a new TimeFetcher instance and call on the goFetch() method to run the software.
  */
 public class TimeFetcher {
 
@@ -19,7 +20,8 @@ public class TimeFetcher {
     private URL searchURL;
     private String htmlContent;
     private String time;
-    private String date;
+    private String dayAndDate;
+    private String location;
     private boolean timeAndDateFound;
 
     // For "GUI" of console
@@ -31,7 +33,7 @@ public class TimeFetcher {
     }
 
     /**
-     * Core program loop
+     * Core program loop used to run the software.
      */
     public void goFetch() {
         showWelcomeMessage();
@@ -43,7 +45,8 @@ public class TimeFetcher {
             setSearchURL(searchString);         // Set the URL to parse
             fetchHTML();                        // Fetch and store the HTML
             findTime();                         // Search and store time
-            findDate();                         // Search and store date
+            findDate();                         // Search and store dayAndDate
+            findLocation();                     // Search and store location
             printTimeAndDate();                 // Show results to user
         }
     }
@@ -64,8 +67,6 @@ public class TimeFetcher {
 
             // Replace spaces with plus signs for correct URL
             searchString = userInput.replaceAll(" ", "+");
-            // Makes TitleCase of user input
-            userInput = toTitleCase(userInput);
 
             // Show user that search is being done
             System.out.println("Searching...");
@@ -77,7 +78,7 @@ public class TimeFetcher {
 
     private void setSearchURL(String location) {
         try {
-            String baseURLString = "https://www.google.com/search?q=time+in+";
+            String baseURLString = "https://www.google.com/search?hl=en&q=time+in+";
             searchURL = new URL(baseURLString + location);
         } catch (MalformedURLException e) {
             System.err.println("Error in setSearchURL" + e.getMessage());
@@ -111,61 +112,59 @@ public class TimeFetcher {
     }
 
     private void findTime() {
-        // Find pattern in html to locate time
+        // Pattern to find in html to locate time
         String lp = "<div class=\"gsrt vk_bk dDoNo\" aria-level=\"3\" role=\"heading\">";
         String rp = "</div>";
-        Pattern pattern = Pattern.compile(lp + "(.*?)" + rp);
-        Matcher matcher = pattern.matcher(htmlContent);
 
-        // If time is found, store time
-        if (matcher.find()) {
-            time = matcher.group(1);
-        }
+        time = patternSearch(lp, rp);
     }
 
     private void findDate() {
-        String day = "";
-        String date ="";
+        // Pattern to find in html to locate day
+        String lpDay = "<div class=\"vk_gy vk_sh\"> ";
+        String rpDay = "<span class=\"KfQeJ\">";
+        String day = patternSearch(lpDay, rpDay);
 
-        // Find pattern in html to locate day
-        String lp = "<div class=\"vk_gy vk_sh\"> ";
-        String rp = "<span class=\"KfQeJ\">";
-        Pattern pattern = Pattern.compile(lp + "(.*?)" + rp);
+
+        // Pattern to find in html to locate date
+        String lpDate = "<span class=\"KfQeJ\">";
+        String rpDate = "</span>";
+        String date = patternSearch(lpDate,rpDate);
+
+        // Store in dayAndDate
+        this.dayAndDate = day + date;
+    }
+
+    private void findLocation() {
+        // Pattern to find in html to locate location
+        String lp = "<span> Time in ";
+        String rp = " </span>";
+
+        location = patternSearch(lp, rp);
+    }
+
+    // Method used to search for content in string using regex patterns
+    private String patternSearch(String leftPattern, String rightPattern) {
+        Pattern pattern = Pattern.compile(leftPattern + "(.*?)" + rightPattern);
         Matcher matcher = pattern.matcher(htmlContent);
 
-        // If day is found, store day
         if (matcher.find()) {
-            day = matcher.group(1);
+            return matcher.group(1);
         } else {
             timeAndDateFound = false;
+            return "";
         }
-
-        // Find pattern in html to locate date
-        lp = "<span class=\"KfQeJ\">";
-        rp = "</span>";
-        pattern = Pattern.compile(lp + "(.*?)" + rp);
-        matcher = pattern.matcher(htmlContent);
-
-        // If date is found, store date
-        if (matcher.find()) {
-            date = matcher.group(1);
-        } else {
-            timeAndDateFound = false;
-        }
-
-        // Store in date
-        this.date = day + date;
     }
 
     private void printTimeAndDate() {
         if (timeAndDateFound) {
             System.out.println(separator);
-            System.out.println(userInput);
-            System.out.println(date + ", " + time);
+            System.out.println(location);
+            System.out.println(dayAndDate + ", " + time);
             System.out.println(separator);
         } else {
             System.out.println(separator);
-            System.out.println("Could not retrieve time and date. \n" +
+            System.out.println("Could not retrieve time and dayAndDate. \n" +
                     "Please check spelling or try another location. \n" +
                     "If problem persists please contact \n" +
                     "software administrator");
@@ -173,33 +172,11 @@ public class TimeFetcher {
         }
     }
 
-    /**
-     * Welcome message at the start of the program
-     */
     private void showWelcomeMessage() {
         System.out.println(separator);
         System.out.println("Welcome to TimeFetcher!\nIn this program, you can enter a city \n" +
                 "or a country and I will give you the \n" +
-                "current time and date");
+                "current time and dayAndDate");
         System.out.println(separator);
-    }
-
-    private String toTitleCase(String s) {
-        StringBuilder sb = new StringBuilder();
-        boolean nextCharTitle = true;
-
-        for (char c : s.toCharArray()) {
-            if (Character.isSpaceChar(c)) {         // New word
-                nextCharTitle = true;
-            } else if (nextCharTitle) {             // First letter of new word
-                c = Character.toTitleCase(c);
-                nextCharTitle = false;
-            } else if (!Character.isSpaceChar(c)){  // Regular lowercase character
-                c = Character.toLowerCase(c);
-            }
-
-            sb.append(c);
-        }
-        return sb.toString();
     }
 }
